@@ -192,15 +192,23 @@ function mountScrollWorld(container, config) {
   const lingerEase = (x, L) => { L = clamp(L); const c = x - 0.5; return (1 - L) * x + L * (4 * c * c * c + 0.5); };
   let vh = window.innerHeight, stageX = 0, totalW = 0, activeIndex = -1, ticking = false;
   let laidOutW = window.innerWidth;   // width the current layout was computed at (see onResize)
+  let laidOutVh = window.innerHeight; // ...and height
 
   function layout() {
+    // Keep the reader at the same point of the flight when the scale changes.
+    const prevTotal = totalW * vh;
+    const progress = prevTotal > 0 ? (window.scrollY || window.pageYOffset) / prevTotal : 0;
     vh = window.innerHeight;
+    laidOutVh = vh;
     laidOutW = window.innerWidth;
     stageX = window.innerWidth > 860 ? 4 : 0;
     let off = 0;
     SEGMENTS.forEach(s => { s.start = off * vh; off += s.w; s.end = off * vh; });
     totalW = off;
     track.style.height = (totalW * vh + vh) + 'px';   // +1vh so the last flight completes
+    if (prevTotal > 0 && progress > 0 && progress < 1 && Math.abs(totalW * vh - prevTotal) > 1) {
+      window.scrollTo(0, progress * totalW * vh);
+    }
     read();
   }
 
@@ -328,6 +336,8 @@ function mountScrollWorld(container, config) {
     if (userReady) return;
     userReady = true;
     SEGMENTS.forEach(s => primeVideo(s.video));
+    // Some webviews grow the viewport without firing resize; recheck once here.
+    onResize();
   }
   window.addEventListener('pointerdown', onFirstGesture, { once: true, passive: true });
   window.addEventListener('touchstart', onFirstGesture, { once: true, passive: true });
@@ -339,9 +349,14 @@ function mountScrollWorld(container, config) {
   // layout() there rebuilds the track height and yanks the scroll position, so on
   // touch we ignore height-only changes and only relayout when the width actually
   // changes (rotation still comes through orientationchange). layout() records the
-  // width it laid out at.
+  // width it laid out at. In-app webviews (LinkedIn, Instagram…) are the exception:
+  // they often mount the page while their sheet is still opening, with a tiny
+  // innerHeight, then grow it. A URL bar moves the height by ~10%, so anything past
+  // 20% is a real viewport change and must relayout — otherwise every scene spans a
+  // few pixels of scroll and only its last frame is ever seen.
   function onResize() {
-    if (coarse && window.innerWidth === laidOutW) return;
+    const bigHeightChange = Math.abs(window.innerHeight - laidOutVh) > 0.2 * laidOutVh;
+    if (coarse && window.innerWidth === laidOutW && !bigHeightChange) return;
     layout();
   }
   window.addEventListener('resize', onResize);
@@ -445,7 +460,7 @@ function injectCSS() {
     .sw-copy{bottom:calc(clamp(56px,12dvh,110px) + env(safe-area-inset-bottom));}
     .sw-copy__title{font-size:clamp(1.9rem,7.5vw,2.7rem);}
     .sw-copy__body{max-width:none;font-size:clamp(.98rem,3.6vw,1.1rem);} .sw-scene__video,.sw-scene__still{object-position:center 46%;}
-    .sw-hint{bottom:calc(20px + env(safe-area-inset-bottom));}
+    .sw-hint{display:none;}
     .sw-route{gap:16px;right:6px;} .sw-route__label{display:none;}
   }
   /* Portrait phones crop a 16:9 clip hard; keep the framing centred so the focal

@@ -1,6 +1,12 @@
 ---
 const year = new Date().getFullYear();
+import { Icon } from 'astro-icon/components';
 import { withBase } from '../lib/url';
+
+const credits = [
+  { label: 'Portfolio', href: 'https://jesusgabriel.dev/', icon: 'ph:globe-simple' },
+  { label: 'LinkedIn', href: 'https://www.linkedin.com/in/jesus-ahumada', icon: 'ph:linkedin-logo' },
+];
 ---
 
 <footer class="relative z-[60] border-t border-line bg-sand">
@@ -15,11 +21,33 @@ import { withBase } from '../lib/url';
       </p>
     </div>
 
-    <nav aria-label="Legal y contacto" class="flex flex-col gap-3 text-sm text-ink-soft sm:flex-row sm:gap-8">
-      <a class="rounded transition-colors duration-700 ease-fluid hover:text-ink focus-visible:outline-2 focus-visible:outline-clay" href={withBase("/privacidad")}>Política de privacidad</a>
-      <a class="rounded transition-colors duration-700 ease-fluid hover:text-ink focus-visible:outline-2 focus-visible:outline-clay" href={withBase("/terminos")}>Términos y condiciones</a>
-      <a class="rounded transition-colors duration-700 ease-fluid hover:text-ink focus-visible:outline-2 focus-visible:outline-clay" href="mailto:hola@ceiba.cafe">hola@ceiba.cafe</a>
-    </nav>
+    <div class="flex flex-col gap-6 md:items-end">
+      <nav aria-label="Legal y contacto" class="flex flex-col gap-3 text-sm text-ink-soft sm:flex-row sm:gap-8">
+        <a class="rounded transition-colors duration-700 ease-fluid hover:text-ink focus-visible:outline-2 focus-visible:outline-clay" href={withBase("/privacidad")}>Política de privacidad</a>
+        <a class="rounded transition-colors duration-700 ease-fluid hover:text-ink focus-visible:outline-2 focus-visible:outline-clay" href={withBase("/terminos")}>Términos y condiciones</a>
+        <a class="rounded transition-colors duration-700 ease-fluid hover:text-ink focus-visible:outline-2 focus-visible:outline-clay" href="mailto:hola@ceiba.cafe">hola@ceiba.cafe</a>
+      </nav>
+
+      <div class="flex flex-col gap-3 md:items-end">
+        <p class="text-sm text-ink-soft">Diseñado y desarrollado por Jesús Ahumada</p>
+        <div class="flex flex-wrap gap-3">
+          {
+            credits.map((c) => (
+              <a
+                class="inline-flex items-center gap-2 rounded-full border border-line bg-cream px-4 py-2 text-sm font-semibold text-ink transition-colors duration-700 ease-fluid hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-clay"
+                href={c.href}
+                target="_blank"
+                rel="noopener"
+              >
+                <Icon name={c.icon} class="h-4 w-4" aria-hidden="true" />
+                {c.label}
+                <Icon name="ph:arrow-up-right" class="h-3.5 w-3.5 text-ink-soft" aria-hidden="true" />
+              </a>
+            ))
+          }
+        </div>
+      </div>
+    </div>
   </div>
   <p class="mx-auto max-w-6xl px-6 pb-8 text-xs text-ink-soft">© {year} CEIBA Café de origen. Proyecto de demostración.</p>
 </footer>
