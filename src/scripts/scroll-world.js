@@ -222,6 +222,8 @@ function mountScrollWorld(container, config) {
     // and simply cross-dissolve as you scroll. No scrubbed video motion, no decode cost.
     if (reduce || s.loading || !s.clip) return;
     s.loading = true;
+    // Already fetched once and released by unloadClip: rebuild from the cached blob.
+    if (s.blobUrl) { attachVideo(s, s.blobUrl); return; }
     // Serve the lighter mobile encode on phones when one was provided; on desktop
     // prefer the AV1 encode only where the browser decodes it smoothly in hardware.
     av1Smooth.then(av1 => {
@@ -234,19 +236,40 @@ function mountScrollWorld(container, config) {
       return fetch(url);
     }).then(r => r.ok ? r.blob() : Promise.reject(new Error('404')))
       .then(blob => {
-        const v = document.createElement('video');
-        v.className = 'sw-scene__video';
-        v.muted = true; v.playsInline = true; v.preload = 'auto';
-        v.setAttribute('muted', ''); v.setAttribute('playsinline', '');
-        v.src = URL.createObjectURL(blob);
-        v.addEventListener('loadedmetadata', () => { s.ready = true; read(); });
-        // Reveal the video (hide the still poster) only once a real frame has
-        // painted — on iOS a seeked-but-never-played muted video stays blank, so
-        // hiding the still on metadata alone would flash an empty scene.
-        v.addEventListener('seeked', () => { s.el.classList.add('has-clip'); }, { once: true });
-        v.addEventListener('loadeddata', () => { try { v.pause(); } catch (e) {} if (userReady) primeVideo(v); });
-        s.el.appendChild(v); s.video = v; s.hasClip = true;
+        s.blobUrl = URL.createObjectURL(blob);
+        // Scrolled away while fetching: keep the blob, skip the decoder.
+        if (!s.loading) return;
+        attachVideo(s, s.blobUrl);
       }).catch(() => { s.loading = false; });
+  }
+
+  function attachVideo(s, url) {
+    const v = document.createElement('video');
+    v.className = 'sw-scene__video';
+    v.muted = true; v.playsInline = true; v.preload = 'auto';
+    v.setAttribute('muted', ''); v.setAttribute('playsinline', '');
+    v.src = url;
+    v.addEventListener('loadedmetadata', () => { if (s.video !== v) return; s.ready = true; s.cur = s.target; read(); });
+    // Reveal the video (hide the still poster) only once a real frame has
+    // painted — on iOS a seeked-but-never-played muted video stays blank, so
+    // hiding the still on metadata alone would flash an empty scene.
+    v.addEventListener('seeked', () => { if (s.video === v) s.el.classList.add('has-clip'); }, { once: true });
+    v.addEventListener('loadeddata', () => { try { v.pause(); } catch (e) {} if (userReady) primeVideo(v); });
+    s.el.appendChild(v); s.video = v; s.hasClip = true;
+  }
+
+  // Webviews (LinkedIn, Instagram) and low-end phones cap how many media players can
+  // decode at once; past that, newer clips stop painting and freeze on a stale frame.
+  // Release the decoder of clips far from the viewport; the blob stays cached, so
+  // coming back only rebuilds the <video>, with no refetch.
+  function unloadClip(s) {
+    s.loading = false;
+    if (!s.video) return;
+    const v = s.video;
+    s.video = null; s.hasClip = false; s.ready = false;
+    s.el.classList.remove('has-clip');
+    try { v.pause(); v.removeAttribute('src'); v.load(); } catch (e) {}
+    v.remove();
   }
 
   function read() {
@@ -258,6 +281,10 @@ function mountScrollWorld(container, config) {
     for (let i = 0; i < NSEG; i++) {
       const s = SEGMENTS[i];
       if (y > s.start - 1.6 * vh && y < s.end + 1.6 * vh) loadClip(s);
+      // Wider band than the load window (hysteresis) so a clip near the edge
+      // doesn't flap between loaded and released.
+      // The held last scene stays on screen under the page, so it keeps its clip.
+      else if (y < s.start - 2.4 * vh || (y > s.end + 2.4 * vh && !(HOLD_LAST && i === NSEG - 1))) unloadClip(s);
       const local = clamp((y - s.start) / (s.end - s.start), 0, 1);
       s.target = s.linger ? lingerEase(local, s.linger) : local;
       let outside = 0;
