@@ -406,6 +406,13 @@ function mountScrollWorld(container, config) {
     // Some webviews grow the viewport without firing resize; recheck once here.
     onResize();
   }
+  // Closing and quickly reopening restores the page from the back/forward cache (or
+  // resumes the app) with its videos in whatever state they were, and iOS may resume
+  // them. Pause everything whenever the page is hidden or shown again.
+  function pauseAll() { SEGMENTS.forEach(s => { if (s.video) { try { s.video.pause(); } catch (e) {} } }); }
+  window.addEventListener('pageshow', () => { pauseAll(); read(); });
+  window.addEventListener('pagehide', pauseAll);
+  document.addEventListener('visibilitychange', pauseAll);
   window.addEventListener('pointerdown', onFirstGesture, { once: true, passive: true });
   window.addEventListener('touchstart', onFirstGesture, { once: true, passive: true });
 
