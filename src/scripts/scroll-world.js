@@ -266,6 +266,10 @@ function mountScrollWorld(container, config) {
     v.addEventListener('seeked', () => { if (s.video === v) s.el.classList.add('has-clip'); }, { once: true });
     // A pause() here would abort a pending prime play() (AbortError) on phones.
     v.addEventListener('loadeddata', () => { if (!isMobile()) { try { v.pause(); } catch (e) {} } });
+    // Scroll drives the clip, never playback: the prime play() has done its job (frames
+    // are buffering) once playback actually starts, so stop it right there. Relying on
+    // the play() promise alone let clips run on their own when it resolved late.
+    v.addEventListener('playing', () => { try { v.pause(); } catch (e) {} });
     if (debug) {
       ['seeked', 'stalled', 'waiting', 'suspend', 'play', 'pause', 'ended'].forEach(ev =>
         v.addEventListener(ev, () => { s.dbg[ev] = (s.dbg[ev] || 0) + 1; }));
@@ -363,6 +367,9 @@ function mountScrollWorld(container, config) {
     for (let i = 0; i < NSEG; i++) {
       const s = SEGMENTS[i];
       if (!s.hasClip || !s.ready || !s.video) continue;
+      // Safety net for a prime that escaped every pause: past the priming window, a
+      // playing clip is a bug, so stop it and let the scroll target take over again.
+      if (!s.video.paused && performance.now() - (s.video._primeAt || 0) > 600) { try { s.video.pause(); } catch (e) {} }
       // Never queue a seek while the decoder is still resolving the last one.
       // On phones a fast flick would otherwise pile up seeks and freeze the clip;
       // cur keeps lerping, so we snap to the latest target the moment it's free.
@@ -388,6 +395,7 @@ function mountScrollWorld(container, config) {
   let userReady = false;
   function primeVideo(v) {
     if (!isMobile() || !v) return;
+    v._primeAt = performance.now();
     try { const p = v.play(); if (p && p.then) p.then(() => { try { v.pause(); } catch (e) {} }).catch(e => { if (debug) dbgLog('play rejected: ' + e.name); if (e.name === 'NotAllowedError') blockVideo(); }); }
     catch (e) {}
   }
