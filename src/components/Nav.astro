@@ -17,7 +17,7 @@ const links = [
 <header class="pointer-events-none fixed inset-x-0 top-0 z-[70] flex justify-center px-4">
   <nav
     aria-label="Principal"
-    class="pointer-events-auto mx-auto mt-6 flex w-max items-center gap-6 rounded-full border border-line/70 bg-cream/75 py-2 pl-6 pr-2 shadow-[0_8px_32px_rgba(42,31,23,0.08)] backdrop-blur-xl"
+    class="pointer-events-auto relative z-[80] mx-auto mt-6 flex w-max items-center gap-6 rounded-full border border-line/70 bg-cream/75 py-2 pl-6 pr-2 shadow-[0_8px_32px_rgba(42,31,23,0.08)] backdrop-blur-xl"
   >
     <a
       href={withBase("/")}
@@ -73,16 +73,16 @@ const links = [
     class="pointer-events-none fixed inset-0 z-[75] flex flex-col justify-center bg-cream/80 px-8 opacity-0 backdrop-blur-3xl transition-opacity duration-700 ease-fluid md:hidden"
     aria-hidden="true"
   >
-    <ul class="flex flex-col gap-6">
+    <ul class="flex flex-col gap-4">
       {
         links.map((link, i) => (
-          <li class="overflow-hidden">
+          <li class="overflow-hidden pb-1">
             <a
               href={link.href}
               data-menu-link
               tabindex="-1"
               style={`transition-delay: ${100 + i * 50}ms`}
-              class="block translate-y-12 text-4xl font-semibold text-ink opacity-0 transition-all duration-700 ease-fluid"
+              class="block translate-y-12 text-2xl leading-normal font-semibold text-ink opacity-0 transition-all duration-700 ease-fluid"
             >
               {link.label}
             </a>
