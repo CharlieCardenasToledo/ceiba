@@ -85,6 +85,8 @@ function mountScrollWorld(container, config) {
   const HOLD_LAST = config.holdLast !== false;
   const N = SECTIONS.length;
   if (!N) return;
+  const debug = /[?&]debug\b/.test(location.search);
+  const dbgLines = [];
   // Scrubbing seeks constantly, so AV1 is only worth it with hardware decoding:
   // ask MediaCapabilities for smooth + power-efficient, else fall back to H.264.
   const av1Smooth = (config.av1Codec && navigator.mediaCapabilities && SECTIONS.some(s => s.clipAv1))
@@ -157,7 +159,7 @@ function mountScrollWorld(container, config) {
     if (poster) img.src = poster;
     scene.appendChild(img); stage.appendChild(scene);
     s.el = scene; s.img = img; s.video = null; s.hasClip = false;
-    s.loading = false; s.ready = false; s.cur = 0; s.target = 0; s.visible = false;
+    s.loading = false; s.ready = false; s.cur = 0; s.target = 0; s.visible = false; s.dbg = {};
   });
 
   // per-section copy / route / nav
@@ -220,7 +222,7 @@ function mountScrollWorld(container, config) {
   function loadClip(s) {
     // Under prefers-reduced-motion we never load the clips at all — the stills stay up
     // and simply cross-dissolve as you scroll. No scrubbed video motion, no decode cost.
-    if (reduce || s.loading || !s.clip) return;
+    if (reduce || videoBlocked || s.loading || !s.clip) return;
     s.loading = true;
     // Already fetched once and released by unloadClip: rebuild from the cached blob.
     if (s.blobUrl) { attachVideo(s, s.blobUrl); return; }
@@ -254,8 +256,40 @@ function mountScrollWorld(container, config) {
     // painted — on iOS a seeked-but-never-played muted video stays blank, so
     // hiding the still on metadata alone would flash an empty scene.
     v.addEventListener('seeked', () => { if (s.video === v) s.el.classList.add('has-clip'); }, { once: true });
-    v.addEventListener('loadeddata', () => { try { v.pause(); } catch (e) {} if (userReady) primeVideo(v); });
+    v.addEventListener('loadeddata', () => {
+      try { v.pause(); } catch (e) {}
+      if (userReady) primeVideo(v);
+      else if (isMobile() && !playProbed) probePlayback(v);
+    });
+    if (debug) {
+      ['seeked', 'stalled', 'waiting', 'suspend', 'play', 'pause', 'ended'].forEach(ev =>
+        v.addEventListener(ev, () => { s.dbg[ev] = (s.dbg[ev] || 0) + 1; }));
+      v.addEventListener('error', () => { s.dbg.err = v.error ? v.error.code + ' ' + (v.error.message || '') : '?'; });
+    }
     s.el.appendChild(v); s.video = v; s.hasClip = true;
+  }
+
+  // iOS Low Power Mode refuses even muted inline playback, and a video it blocks
+  // doesn't repaint reliably on seek either, so scrubbing freezes on stale frames.
+  // Probe once with a muted play(): if it's refused, drop the clips for good and let
+  // the stills cross-dissolve with their zoom, the same as under reduced motion.
+  let videoBlocked = false, playProbed = false;
+  function probePlayback(v) {
+    playProbed = true;
+    let p;
+    try { p = v.play(); } catch (e) { return; }
+    if (!p || !p.then) return;
+    p.then(() => { try { v.pause(); } catch (e) {} })
+      .catch(e => {
+        if (debug) dbgLog('probe: ' + e.name);
+        if (e.name === 'NotAllowedError') blockVideo();
+      });
+  }
+  function blockVideo() {
+    if (videoBlocked) return;
+    videoBlocked = true;
+    SEGMENTS.forEach(unloadClip);
+    read();
   }
 
   // Webviews (LinkedIn, Instagram) and low-end phones cap how many media players can
@@ -356,7 +390,7 @@ function mountScrollWorld(container, config) {
   let userReady = false;
   function primeVideo(v) {
     if (!isMobile() || !v) return;
-    try { const p = v.play(); if (p && p.then) p.then(() => { try { v.pause(); } catch (e) {} }).catch(() => {}); }
+    try { const p = v.play(); if (p && p.then) p.then(() => { try { v.pause(); } catch (e) {} }).catch(e => { if (debug) dbgLog('play rejected: ' + e.name); if (e.name === 'NotAllowedError') blockVideo(); }); }
     catch (e) {}
   }
   function onFirstGesture() {
@@ -391,6 +425,28 @@ function mountScrollWorld(container, config) {
   window.addEventListener('load', layout);
   layout();
   requestAnimationFrame(raf);
+
+  // ---- ?debug: on-screen state of every clip, for phones without devtools ----
+  function dbgLog(msg) { dbgLines.push(new Date().toISOString().slice(17, 22) + ' ' + msg); if (dbgLines.length > 6) dbgLines.shift(); }
+  if (debug) {
+    const panel = el('pre');
+    panel.style.cssText = 'position:fixed;left:4px;right:4px;top:40px;z-index:9999;margin:0;padding:6px;font:10px/1.35 ui-monospace,monospace;background:rgba(0,0,0,.78);color:#0f0;white-space:pre-wrap;pointer-events:none;';
+    document.body.appendChild(panel);
+    window.addEventListener('error', e => dbgLog('js: ' + e.message));
+    setInterval(() => {
+      const y = Math.round(window.scrollY);
+      const rows = SEGMENTS.map((s, i) => {
+        const v = s.video;
+        const ev = Object.keys(s.dbg).filter(k => k !== 'err').map(k => k + ':' + s.dbg[k]).join(' ');
+        return `${i}${s.visible ? '*' : ' '} tg=${s.target.toFixed(2)} cur=${s.cur.toFixed(2)} ` +
+          (v ? `t=${v.currentTime.toFixed(2)}/${(v.duration || 0).toFixed(1)} rs=${v.readyState} sk=${v.seeking ? 1 : 0} p=${v.paused ? 1 : 0} clip=${s.el.classList.contains('has-clip') ? 1 : 0} ${ev}${s.dbg.err ? ' ERR ' + s.dbg.err : ''}`
+             : (s.blobUrl ? 'released' : s.loading ? 'fetching' : 'none'));
+      });
+      panel.textContent = `${navigator.userAgent.replace(/^Mozilla\/5\.0 /, '').slice(0, 110)}\n` +
+        `vh=${vh} ih=${window.innerHeight} iw=${window.innerWidth} y=${y} coarse=${coarse ? 1 : 0} mob=${isMobile() ? 1 : 0} ready=${userReady ? 1 : 0} blocked=${videoBlocked ? 1 : 0}\n` +
+        rows.join('\n') + (dbgLines.length ? '\n' + dbgLines.join('\n') : '');
+    }, 400);
+  }
 
   // ---- helpers ----
   function el(tag, cls) { const n = document.createElement(tag); if (cls) n.className = cls; return n; }
