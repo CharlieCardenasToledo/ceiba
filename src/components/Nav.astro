@@ -1,0 +1,155 @@
+---
+import { withBase } from '../lib/url';
+interface Props {
+  current?: string;
+}
+
+const { current = '/' } = Astro.props;
+
+const links = [
+  { href: withBase('/#origen'), label: 'Origen' },
+  { href: withBase('/#como-funciona'), label: 'Cómo funciona' },
+  { href: withBase('/#comprar'), label: 'La bolsa' },
+  { href: withBase('/#preguntas'), label: 'Preguntas' },
+];
+---
+
+<header class="pointer-events-none fixed inset-x-0 top-0 z-[70] flex justify-center px-4">
+  <nav
+    aria-label="Principal"
+    class="pointer-events-auto mx-auto mt-6 flex w-max items-center gap-6 rounded-full border border-line/70 bg-cream/75 py-2 pl-6 pr-2 shadow-[0_8px_32px_rgba(42,31,23,0.08)] backdrop-blur-xl"
+  >
+    <a
+      href={withBase("/")}
+      class="flex items-center gap-2 rounded-full text-base font-bold tracking-wide text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-clay"
+      aria-current={current === '/' ? 'page' : undefined}
+    >
+      <img src={withBase("/favicon.svg")} alt="" width="24" height="24" />
+      CEIBA
+    </a>
+
+    <ul class="hidden items-center gap-1 md:flex">
+      {
+        links.map((link) => (
+          <li>
+            <a
+              href={link.href}
+              data-nav-link
+              class="rounded-full px-3 py-2 text-sm font-semibold text-ink-soft transition-colors duration-700 ease-fluid hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-clay aria-[current=true]:text-ink"
+            >
+              {link.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+
+    <a
+      href={withBase("/#comprar")}
+      class="hidden rounded-full bg-forest px-3 py-2 text-sm font-semibold text-cream transition-all duration-700 ease-fluid hover:-translate-y-0.5 hover:bg-forest-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-clay active:scale-[0.98] sm:inline-block"
+    >
+      Pedir mi bolsa
+    </a>
+
+    <button
+      type="button"
+      id="menu-toggle"
+      aria-label="Abrir menú"
+      aria-expanded="false"
+      aria-controls="menu-overlay"
+      class="relative z-[80] h-10 w-10 rounded-full transition-colors duration-700 ease-fluid hover:bg-sand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-clay md:hidden"
+    >
+      <span
+        data-bar="top"
+        class="absolute left-3 top-4 h-0.5 w-4 rounded-full bg-ink transition-all duration-700 ease-fluid"></span>
+      <span
+        data-bar="bottom"
+        class="absolute bottom-4 left-3 h-0.5 w-4 rounded-full bg-ink transition-all duration-700 ease-fluid"></span>
+    </button>
+  </nav>
+
+  <div
+    id="menu-overlay"
+    class="pointer-events-none fixed inset-0 z-[75] flex flex-col justify-center bg-cream/80 px-8 opacity-0 backdrop-blur-3xl transition-opacity duration-700 ease-fluid md:hidden"
+    aria-hidden="true"
+  >
+    <ul class="flex flex-col gap-6">
+      {
+        links.map((link, i) => (
+          <li class="overflow-hidden">
+            <a
+              href={link.href}
+              data-menu-link
+              tabindex="-1"
+              style={`transition-delay: ${100 + i * 50}ms`}
+              class="block translate-y-12 text-4xl font-semibold text-ink opacity-0 transition-all duration-700 ease-fluid"
+            >
+              {link.label}
+            </a>
+          </li>
+        ))
+      }
+      <li class="overflow-hidden pt-6">
+        <a
+          href={withBase("/#comprar")}
+          data-menu-link
+          tabindex="-1"
+          style="transition-delay: 300ms"
+          class="inline-block translate-y-12 rounded-full bg-forest px-3 py-2 text-base font-semibold text-cream opacity-0 transition-all duration-700 ease-fluid"
+        >
+          Pedir mi bolsa
+        </a>
+      </li>
+    </ul>
+  </div>
+</header>
+
+<script>
+  const toggle = document.getElementById('menu-toggle');
+  const overlay = document.getElementById('menu-overlay');
+  const top = toggle?.querySelector<HTMLElement>('[data-bar="top"]');
+  const bottom = toggle?.querySelector<HTMLElement>('[data-bar="bottom"]');
+  const menuLinks = overlay?.querySelectorAll<HTMLElement>('[data-menu-link]') ?? [];
+
+  function setOpen(open: boolean) {
+    if (!toggle || !overlay || !top || !bottom) return;
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.setAttribute('aria-label', open ? 'Cerrar menú' : 'Abrir menú');
+    overlay.setAttribute('aria-hidden', String(!open));
+    overlay.classList.toggle('opacity-0', !open);
+    overlay.classList.toggle('pointer-events-none', !open);
+    // Bars morph into an X: both meet at the center line and rotate.
+    top.style.transform = open ? 'translateY(3px) rotate(45deg)' : '';
+    bottom.style.transform = open ? 'translateY(-3px) rotate(-45deg)' : '';
+    menuLinks.forEach((link) => {
+      link.classList.toggle('translate-y-12', !open);
+      link.classList.toggle('opacity-0', !open);
+      link.tabIndex = open ? 0 : -1;
+    });
+    document.body.style.overflow = open ? 'hidden' : '';
+  }
+
+  toggle?.addEventListener('click', () => setOpen(toggle.getAttribute('aria-expanded') !== 'true'));
+  menuLinks.forEach((link) => link.addEventListener('click', () => setOpen(false)));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') setOpen(false);
+  });
+
+  // Mark the nav link of the section currently in view.
+  const navLinks = document.querySelectorAll<HTMLAnchorElement>('[data-nav-link]');
+  const sectionObserver = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        navLinks.forEach((a) => {
+          a.setAttribute('aria-current', String(a.hash === `#${entry.target.id}`));
+        });
+      }
+    },
+    { rootMargin: '-45% 0px -50% 0px' },
+  );
+  navLinks.forEach((a) => {
+    const target = a.hash ? document.querySelector(a.hash) : null;
+    if (target) sectionObserver.observe(target);
+  });
+</script>

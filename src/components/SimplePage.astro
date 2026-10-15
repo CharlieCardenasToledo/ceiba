@@ -1,0 +1,29 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { withBase } from '../lib/url';
+
+interface Props {
+  title: string;
+  description: string;
+  eyebrow: string;
+  heading: string;
+}
+
+const { title, description, eyebrow, heading } = Astro.props;
+---
+
+<Layout title={title} description={description} current={Astro.url.pathname}>
+  <main id="contenido" class="relative z-[60] mx-auto flex min-h-[80vh] max-w-3xl flex-col gap-6 px-6 pb-24 pt-40">
+    <span class="text-xs font-bold uppercase tracking-widest text-clay">{eyebrow}</span>
+    <h1 class="text-hero-gradient max-w-[680px] text-4xl font-bold tracking-tight md:text-6xl">{heading}</h1>
+    <div class="flex flex-col gap-4 text-lg text-ink-soft">
+      <slot />
+    </div>
+    <a
+      href={withBase("/")}
+      class="mt-6 inline-flex w-max items-center rounded-full bg-forest px-3 py-2 text-base font-semibold text-cream transition-all duration-700 ease-fluid hover:-translate-y-0.5 hover:bg-forest-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-clay active:scale-[0.98]"
+    >
+      Volver al inicio
+    </a>
+  </main>
+</Layout>

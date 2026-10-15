@@ -1,0 +1,25 @@
+---
+const year = new Date().getFullYear();
+import { withBase } from '../lib/url';
+---
+
+<footer class="relative z-[60] border-t border-line bg-sand">
+  <div class="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-12 md:flex-row md:items-start md:justify-between">
+    <div class="flex max-w-sm flex-col gap-3">
+      <a href={withBase("/")} class="flex items-center gap-2 text-base font-bold tracking-wide text-ink">
+        <img src={withBase("/favicon.svg")} alt="" width="24" height="24" />
+        CEIBA
+      </a>
+      <p class="text-sm text-ink-soft">
+        Café de origen colombiano tostado en lotes pequeños. Despachos a todo el país.
+      </p>
+    </div>
+
+    <nav aria-label="Legal y contacto" class="flex flex-col gap-3 text-sm text-ink-soft sm:flex-row sm:gap-8">
+      <a class="rounded transition-colors duration-700 ease-fluid hover:text-ink focus-visible:outline-2 focus-visible:outline-clay" href={withBase("/privacidad")}>Política de privacidad</a>
+      <a class="rounded transition-colors duration-700 ease-fluid hover:text-ink focus-visible:outline-2 focus-visible:outline-clay" href={withBase("/terminos")}>Términos y condiciones</a>
+      <a class="rounded transition-colors duration-700 ease-fluid hover:text-ink focus-visible:outline-2 focus-visible:outline-clay" href="mailto:hola@ceiba.cafe">hola@ceiba.cafe</a>
+    </nav>
+  </div>
+  <p class="mx-auto max-w-6xl px-6 pb-8 text-xs text-ink-soft">© {year} CEIBA Café de origen. Proyecto de demostración.</p>
+</footer>

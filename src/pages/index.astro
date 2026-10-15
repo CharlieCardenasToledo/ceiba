@@ -1,0 +1,469 @@
+---
+import { Icon } from 'astro-icon/components';
+import { withBase } from '../lib/url';
+import Layout from '../layouts/Layout.astro';
+
+// Scenes of the scroll-scrubbed camera flight (one continuous take, chained clips).
+// Scenes with a 4K-upscaled master, served at 2560px to large screens.
+const HD_SCENES = [1, 2, 3, 6];
+const scenes = [
+  {
+    id: 'cafetal',
+    label: 'Cafetal',
+    accent: '#44573A',
+    eyebrow: 'Café de origen · Colombia',
+    title: 'Café de montaña,\ncosechado a 1.750 metros.',
+    body: 'Seguimos cada grano desde la finca hasta tu taza. Baja con calma y recorre el camino.',
+  },
+  {
+    id: 'cosecha',
+    label: 'Cosecha',
+    accent: '#5E7340',
+    eyebrow: 'Recolección a mano',
+    title: 'Solo la cereza\nen su punto.',
+    body: 'Recorremos cada árbol varias veces por temporada y recogemos únicamente los frutos rojos y maduros.',
+  },
+  {
+    id: 'secado',
+    label: 'Secado',
+    accent: '#A4542F',
+    eyebrow: 'Secado al sol',
+    title: 'Doce días en\ncamas elevadas.',
+    body: 'El grano se seca despacio al aire libre y lo removemos a mano para que conserve su dulzor natural.',
+  },
+  {
+    id: 'tostion',
+    label: 'Tostión',
+    accent: '#8A4425',
+    eyebrow: 'Tostado en lotes pequeños',
+    title: 'Fuego lento,\nlotes de 12 kilos.',
+    body: 'Tostamos cada semana según los pedidos, así ninguna bolsa espera meses en una bodega.',
+  },
+  {
+    id: 'molienda',
+    label: 'Molienda',
+    accent: '#A4542F',
+    eyebrow: 'Molido el día del despacho',
+    title: 'Molemos\ncuando tú pides.',
+    body: 'Ajustamos la molienda a tu método: prensa francesa, filtro, moka o espresso.',
+  },
+  {
+    id: 'tu-bolsa',
+    label: 'Tu bolsa',
+    accent: '#44573A',
+    eyebrow: 'CEIBA · Café de origen',
+    title: 'Del árbol a tu mesa\nen 48 horas.',
+    body: '340 g de una sola finca, con la fecha de tueste en la etiqueta.',
+    cta: {
+      primary: { label: 'Pedir mi bolsa', href: '#comprar' },
+      secondary: { label: 'Ver cómo funciona', href: '#como-funciona' },
+    },
+  },
+].map((scene, i) => ({
+  ...scene,
+  clip: withBase(`/world/scene-${i + 1}.mp4`),
+  // Lighter 720p encode with denser keyframes so phones scrub without stalling.
+  clipMobile: withBase(`/world/scene-${i + 1}-m.mp4`),
+  // Half the size of the H.264 master; served only where AV1 decodes in hardware.
+  clipAv1: withBase(`/world/scene-${i + 1}.av1.mp4`),
+  // 2560px encodes for large screens, only on the wide shots that need them.
+  ...(HD_SCENES.includes(i + 1) && {
+    clipHd: withBase(`/world/scene-${i + 1}-hd.mp4`),
+    clipHdAv1: withBase(`/world/scene-${i + 1}-hd.av1.mp4`),
+  }),
+  still: withBase(`/world/scene-${i + 1}.webp`),
+}));
+
+const benefits = [
+  {
+    icon: 'ph:map-pin-line',
+    title: 'Trazable de verdad',
+    body: 'Cada bolsa trae el nombre de la finca, el lote y la fecha de cosecha.',
+  },
+  {
+    icon: 'ph:calendar-check',
+    title: 'Fresco en tu cocina',
+    body: 'Despachamos máximo seis días después del tueste y lo imprimimos en la etiqueta.',
+  },
+  {
+    icon: 'ph:handshake',
+    title: 'Precio justo en la finca',
+    body: 'Pagamos 38,5 % por encima del precio base de compra a las familias que cultivan.',
+  },
+  {
+    icon: 'ph:truck',
+    title: 'Llega en 48 horas',
+    body: 'A Bogotá, Medellín, Cali y Barranquilla. Al resto del país en tres a cinco días hábiles.',
+  },
+];
+
+const steps = [
+  {
+    title: 'Elige tu molienda',
+    body: 'Grano entero o molido para tu método. Si no sabes cuál, te ayudamos por WhatsApp.',
+  },
+  {
+    title: 'Tostamos tu lote',
+    body: 'Tu café entra al tostador esa misma semana y se empaca el día del despacho.',
+  },
+  {
+    title: 'Recíbelo y repite',
+    body: 'Pide una sola vez o suscríbete cada dos o cuatro semanas. Pausas o cancelas cuando quieras.',
+  },
+];
+
+const grinds = ['Grano entero', 'Prensa francesa', 'Filtro', 'Espresso'];
+
+const reviews = [
+  {
+    name: 'Valentina Ríos',
+    city: 'Medellín',
+    initials: 'VR',
+    color: 'bg-forest',
+    date: '12 de septiembre de 2026',
+    quote: 'Se nota que está recién tostado. La bolsa abre y el olor llena la cocina. Ya voy en mi cuarta suscripción.',
+  },
+  {
+    name: 'Andrés Felipe Cárdenas',
+    city: 'Bogotá',
+    initials: 'AC',
+    color: 'bg-clay',
+    date: '27 de agosto de 2026',
+    quote: 'Pedí molienda para moka y quedó perfecta. Me gusta saber de qué finca viene lo que tomo cada mañana.',
+  },
+  {
+    name: 'Lucía Mejía Ortiz',
+    city: 'Cali',
+    initials: 'LM',
+    color: 'bg-ink-soft',
+    date: '3 de octubre de 2026',
+    quote: 'Notas a panela y naranja, tal cual lo describen. Llegó en dos días y bien empacado.',
+  },
+];
+
+const faqs = [
+  {
+    q: '¿De dónde viene el café?',
+    a: 'De fincas familiares de montaña en Colombia, entre 1.600 y 1.850 metros sobre el nivel del mar. Cada bolsa indica la finca y el lote exacto.',
+  },
+  {
+    q: '¿Qué molienda debo elegir?',
+    a: 'Grano entero si tienes molino. Si no, elige según tu método: prensa francesa (gruesa), filtro o goteo (media) o espresso (fina).',
+  },
+  {
+    q: '¿Cuánto tarda el envío?',
+    a: 'Dos días hábiles a Bogotá, Medellín, Cali y Barranquilla. Al resto del país, entre tres y cinco días hábiles.',
+  },
+  {
+    q: '¿Cuánto cuesta el envío?',
+    a: 'El envío cuesta $9.900. Es gratis desde dos bolsas o en cualquier suscripción.',
+  },
+  {
+    q: '¿Cómo funciona la suscripción?',
+    a: 'Eliges cada cuánto quieres recibir tu café, cada dos o cuatro semanas. Puedes pausar, cambiar la molienda o cancelar desde tu correo, sin permanencia.',
+  },
+  {
+    q: '¿Y si no me gusta?',
+    a: 'Si tu primera bolsa no te convence, escríbenos y te devolvemos el dinero completo. No necesitas devolver la bolsa.',
+  },
+  {
+    q: '¿Cuánto dura fresco el café?',
+    a: 'Recomendamos tomarlo dentro de las seis semanas siguientes al tueste. Guárdalo cerrado, lejos de la luz y fuera de la nevera.',
+  },
+];
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((f) => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: { '@type': 'Answer', text: f.a },
+  })),
+};
+
+const ctaClass =
+  'inline-flex items-center gap-2 rounded-full bg-forest px-3 py-2 text-base font-semibold text-cream transition-all duration-700 ease-fluid hover:-translate-y-0.5 hover:bg-forest-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-clay active:scale-[0.98]';
+---
+
+<Layout
+  title="CEIBA · Café de origen colombiano, tostado en lotes pequeños"
+  description="Café colombiano de una sola finca, recolectado a mano, secado al sol y tostado cada semana. Recíbelo en 48 horas con la fecha de tueste en la etiqueta."
+>
+  <h1 class="sr-only">CEIBA, café de origen colombiano tostado en lotes pequeños</h1>
+
+  <!-- Scroll-scrubbed camera flight: farm to bag in one continuous take. -->
+  <div id="world" aria-label="Recorrido del café, de la finca a la bolsa"></div>
+
+  <main id="contenido" class="relative z-[60] bg-cream">
+    <!-- Benefits -->
+    <section id="origen" aria-labelledby="beneficios-titulo" class="mx-auto max-w-6xl px-6 py-24">
+      <div class="flex flex-col gap-4" data-reveal>
+        <span class="text-xs font-bold uppercase tracking-widest text-clay">Por qué CEIBA</span>
+        <h2 id="beneficios-titulo" class="max-w-[680px] text-3xl font-bold tracking-tight md:text-5xl">
+          Café que puedes rastrear hasta el árbol
+        </h2>
+      </div>
+      <ul class="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {
+          benefits.map((b) => (
+            <li class="flex flex-col gap-4 rounded-3xl border border-line bg-sand/60 p-8" data-reveal>
+              <Icon name={b.icon} class="h-8 w-8 text-forest" aria-hidden="true" />
+              <h3 class="text-xl font-bold">{b.title}</h3>
+              <p class="text-base text-ink-soft">{b.body}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <!-- How it works -->
+    <section id="como-funciona" aria-labelledby="como-titulo" class="bg-forest text-cream">
+      <div class="mx-auto max-w-6xl px-6 py-24">
+        <div class="flex flex-col gap-4" data-reveal>
+          <span class="text-xs font-bold uppercase tracking-widest text-sand">Cómo funciona</span>
+          <h2 id="como-titulo" class="max-w-[680px] text-3xl font-bold tracking-tight md:text-5xl">
+            Tres pasos y tu café está en camino
+          </h2>
+        </div>
+        <ol class="mt-12 grid gap-8 md:grid-cols-3">
+          {
+            steps.map((s, i) => (
+              <li class="flex flex-col gap-4 border-t border-cream/25 pt-8" data-reveal>
+                <span class="text-sm font-semibold text-sand">Paso {i + 1}</span>
+                <h3 class="text-2xl font-bold">{s.title}</h3>
+                <p class="text-base text-cream/80">{s.body}</p>
+              </li>
+            ))
+          }
+        </ol>
+      </div>
+    </section>
+
+    <!-- Product / offer -->
+    <section id="comprar" aria-labelledby="comprar-titulo" class="mx-auto max-w-6xl px-6 py-24">
+      <div class="grid items-center gap-12 lg:grid-cols-2">
+        <div class="overflow-hidden rounded-3xl border border-line" data-reveal>
+          <img
+            src={withBase("/products/ceiba-bolsa.webp")}
+            alt="Bolsa de papel kraft de café CEIBA abierta, llena de café molido, sobre una mesa de madera"
+            width="1920"
+            height="1072"
+            loading="lazy"
+            class="aspect-[4/3] h-full w-full object-cover"
+          />
+        </div>
+
+        <div class="flex flex-col gap-6" data-reveal>
+          <span class="text-xs font-bold uppercase tracking-widest text-clay">La bolsa</span>
+          <h2 id="comprar-titulo" class="text-3xl font-bold tracking-tight md:text-5xl">CEIBA Origen Colombia</h2>
+          <p class="text-lg text-ink-soft">
+            340 g de café de una sola finca. Notas a panela, naranja y cacao, con cuerpo medio y final dulce.
+          </p>
+          <p class="flex items-baseline gap-2">
+            <span class="text-4xl font-bold">$42.900</span>
+            <span class="text-sm text-ink-soft">COP · envío gratis desde dos bolsas</span>
+          </p>
+
+          <form id="order-form" class="flex flex-col gap-6" novalidate>
+            <fieldset class="flex flex-col gap-3">
+              <legend class="mb-3 text-sm font-semibold">Molienda</legend>
+              <div class="flex flex-wrap gap-2">
+                {
+                  grinds.map((g, i) => (
+                    <label class="cursor-pointer">
+                      <input type="radio" name="molienda" value={g} class="peer sr-only" checked={i === 0} />
+                      <span class="block rounded-full border border-line px-3 py-2 text-sm font-semibold text-ink-soft transition-all duration-700 ease-fluid hover:border-ink-soft peer-checked:border-forest peer-checked:bg-forest peer-checked:text-cream peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-clay">
+                        {g}
+                      </span>
+                    </label>
+                  ))
+                }
+              </div>
+            </fieldset>
+
+            <div class="flex flex-col gap-2">
+              <label for="email" class="text-sm font-semibold">Correo electrónico</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                autocomplete="email"
+                placeholder="tu@correo.com"
+                aria-describedby="email-error"
+                class="rounded-2xl border border-line bg-cream px-4 py-3 text-base text-ink placeholder:text-ink-soft/60 transition-colors duration-700 ease-fluid focus:border-forest focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-clay aria-[invalid=true]:border-clay"
+              />
+              <p id="email-error" class="hidden text-sm font-semibold text-clay" role="alert"></p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-4">
+              <button type="submit" class={ctaClass}>
+                <Icon name="ph:shopping-bag" class="h-5 w-5" aria-hidden="true" />
+                <span data-label>Pedir mi bolsa</span>
+              </button>
+              <span class="flex items-center gap-2 text-sm text-ink-soft">
+                <Icon name="ph:shield-check" class="h-5 w-5 text-forest" aria-hidden="true" />
+                Si la primera bolsa no te gusta, te devolvemos el dinero
+              </span>
+            </div>
+
+            <p id="order-success" class="hidden rounded-2xl border border-forest/30 bg-forest/10 px-4 py-3 text-sm font-semibold text-forest" role="status"></p>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- Social proof -->
+    <section aria-labelledby="resenas-titulo" class="bg-sand">
+      <div class="mx-auto max-w-6xl px-6 py-24">
+        <div class="flex flex-col gap-4" data-reveal>
+          <span class="text-xs font-bold uppercase tracking-widest text-clay">Reseñas</span>
+          <h2 id="resenas-titulo" class="max-w-[680px] text-3xl font-bold tracking-tight md:text-5xl">
+            4,8 de 5 según 312 personas que ya lo toman
+          </h2>
+        </div>
+        <ul class="mt-12 grid gap-4 md:grid-cols-3">
+          {
+            reviews.map((r) => (
+              <li class="flex flex-col justify-between gap-8 rounded-3xl border border-line bg-cream p-8" data-reveal>
+                <blockquote class="text-lg">“{r.quote}”</blockquote>
+                <div class="flex items-center gap-3">
+                  <span class={`grid h-12 w-12 place-items-center rounded-full text-sm font-bold text-cream ${r.color}`} aria-hidden="true">
+                    {r.initials}
+                  </span>
+                  <span class="flex flex-col">
+                    <span class="text-base font-semibold">{r.name}</span>
+                    <span class="text-sm text-ink-soft">{r.city} · {r.date}</span>
+                  </span>
+                </div>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="preguntas" aria-labelledby="faq-titulo" class="mx-auto max-w-3xl px-6 py-24">
+      <div class="flex flex-col gap-4" data-reveal>
+        <span class="text-xs font-bold uppercase tracking-widest text-clay">Preguntas frecuentes</span>
+        <h2 id="faq-titulo" class="text-3xl font-bold tracking-tight md:text-5xl">Lo que nos preguntan antes del primer pedido</h2>
+      </div>
+      <div class="mt-12 flex flex-col gap-3" data-reveal>
+        {
+          faqs.map((f) => (
+            <details class="group rounded-2xl border border-line bg-sand/40 px-6 py-4 transition-colors duration-700 ease-fluid open:bg-sand">
+              <summary class="flex cursor-pointer list-none items-center justify-between gap-4 rounded text-lg font-semibold focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-clay [&::-webkit-details-marker]:hidden">
+                {f.q}
+                <Icon name="ph:plus" class="h-5 w-5 shrink-0 text-ink-soft transition-transform duration-700 ease-fluid group-open:rotate-45" aria-hidden="true" />
+              </summary>
+              <p class="mt-3 text-base text-ink-soft">{f.a}</p>
+            </details>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section aria-labelledby="final-titulo" class="mx-auto max-w-6xl px-6 pb-24">
+      <div class="flex flex-col items-start gap-6 rounded-3xl bg-ink p-12 text-cream md:items-center md:text-center" data-reveal>
+        <h2 id="final-titulo" class="max-w-[680px] text-3xl font-bold tracking-tight md:text-5xl">
+          Tu próxima taza puede venir de una sola finca
+        </h2>
+        <p class="max-w-[680px] text-lg text-cream/75">
+          Tostado esta semana, en tu casa en 48 horas y con devolución si no te convence.
+        </p>
+        <a href="#comprar" class={ctaClass}>
+          <Icon name="ph:shopping-bag" class="h-5 w-5" aria-hidden="true" />
+          Pedir mi bolsa
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+
+  <script define:vars={{ scenes }}>
+    window.__ceibaScenes = scenes;
+  </script>
+
+  <script>
+    import { mountScrollWorld } from '../scripts/scroll-world.js';
+    import { track, trackScrollDepth } from '../scripts/analytics';
+
+    trackScrollDepth();
+    // Buy CTAs (hero, scroll finale, etc.) all point to #comprar.
+    document.addEventListener('click', (e) => {
+      const link = (e.target as Element).closest?.('a[href$="#comprar"]');
+      if (link) track('cta-comprar');
+    });
+
+    const seenSections = new Set<number>();
+    const world = document.getElementById('world');
+    const scenes = (window as any).__ceibaScenes;
+    if (world && scenes) {
+      mountScrollWorld(world, {
+        nav: false,
+        atmosphere: false,
+        hint: 'Desliza para recorrer',
+        diveScroll: 4,
+        crossfade: 0.12,
+        smoothing: 0.08,
+        // SVT-AV1 output: Main profile, level 4.0, 8 bit.
+        av1Codec: 'av01.0.08M.08',
+        connectors: [],
+        // One event per scene reached, once per visit: shows where people drop off.
+        onSection: (i: number, s: any) => {
+          if (seenSections.has(i)) return;
+          seenSections.add(i);
+          track(`seccion-${i + 1}-${s.id}`, { numero: i + 1, id: s.id });
+        },
+        sections: scenes.map((s: any, i: number) => ({
+          ...s,
+          // Viewport heights of scroll per clip: more = slower video. The
+          // product finale gets a longer dwell.
+          scroll: i === scenes.length - 1 ? 7 : 4,
+          linger: i === scenes.length - 1 ? 0.4 : 0.15,
+        })),
+      });
+    }
+
+    // Demo order form: client side validation, loading and inline result.
+    const form = document.getElementById('order-form') as HTMLFormElement | null;
+    const email = document.getElementById('email') as HTMLInputElement | null;
+    const error = document.getElementById('email-error');
+    const success = document.getElementById('order-success');
+    form?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!email || !error || !success) return;
+      const value = email.value.trim();
+      const message = !value
+        ? 'Escribe tu correo para enviarte la confirmación.'
+        : !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)
+          ? 'Ese correo no parece válido. Revisa que tenga @ y un dominio.'
+          : '';
+      email.setAttribute('aria-invalid', String(Boolean(message)));
+      error.textContent = message;
+      error.classList.toggle('hidden', !message);
+      if (message) {
+        email.focus();
+        return;
+      }
+      const button = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+      const label = button.querySelector('[data-label]');
+      button.disabled = true;
+      button.classList.add('opacity-60');
+      if (label) label.textContent = 'Reservando tu bolsa';
+      const grind = (form.querySelector('input[name="molienda"]:checked') as HTMLInputElement)?.value;
+      setTimeout(() => {
+        button.disabled = false;
+        button.classList.remove('opacity-60');
+        if (label) label.textContent = 'Pedir mi bolsa';
+        success.textContent = `Pedido de prueba registrado: una bolsa en ${grind?.toLowerCase()}. Te escribiremos a ${value} con el pago y la fecha de tueste.`;
+        success.classList.remove('hidden');
+        track('pedido-enviado', { molienda: grind ?? 'sin molienda' });
+      }, 900);
+    });
+  </script>
+</Layout>
