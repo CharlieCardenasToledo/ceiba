@@ -43,8 +43,8 @@
        - coalesces seeks (never issues a new currentTime while the decoder is still
          `seeking`) so fast flicks can't pile up and freeze the video.
        - keeps the still as a live poster until the clip actually paints its first frame,
-         and primes each video (muted play→pause) on first touch — this is what stops iOS
-         from showing a blank scene before the first seek.
+         and primes each video (muted play→pause) as soon as its metadata loads — iOS
+         won't buffer frames for a never-played video, so its seeks would hang forever.
        - drops the drifting particles and ignores URL-bar-only resizes (no scroll jump).
      Nothing here is required — a config with only `clip`/`connectors` still works on
      phones; the mobile variants just make it lighter and smoother.
@@ -251,16 +251,21 @@ function mountScrollWorld(container, config) {
     v.muted = true; v.playsInline = true; v.preload = 'auto';
     v.setAttribute('muted', ''); v.setAttribute('playsinline', '');
     v.src = url;
-    v.addEventListener('loadedmetadata', () => { if (s.video !== v) return; s.ready = true; s.cur = s.target; read(); });
+    v.addEventListener('loadedmetadata', () => {
+      if (s.video !== v) return;
+      s.ready = true; s.cur = s.target;
+      // iOS stops at metadata (readyState 1) and suspends the download until play()
+      // is called; a seek issued in that state never completes. Prime right away
+      // instead of waiting for loadeddata, which on iOS never comes.
+      primeVideo(v);
+      read();
+    });
     // Reveal the video (hide the still poster) only once a real frame has
     // painted — on iOS a seeked-but-never-played muted video stays blank, so
     // hiding the still on metadata alone would flash an empty scene.
     v.addEventListener('seeked', () => { if (s.video === v) s.el.classList.add('has-clip'); }, { once: true });
-    v.addEventListener('loadeddata', () => {
-      try { v.pause(); } catch (e) {}
-      if (userReady) primeVideo(v);
-      else if (isMobile() && !playProbed) probePlayback(v);
-    });
+    // A pause() here would abort a pending prime play() (AbortError) on phones.
+    v.addEventListener('loadeddata', () => { if (!isMobile()) { try { v.pause(); } catch (e) {} } });
     if (debug) {
       ['seeked', 'stalled', 'waiting', 'suspend', 'play', 'pause', 'ended'].forEach(ev =>
         v.addEventListener(ev, () => { s.dbg[ev] = (s.dbg[ev] || 0) + 1; }));
@@ -269,22 +274,10 @@ function mountScrollWorld(container, config) {
     s.el.appendChild(v); s.video = v; s.hasClip = true;
   }
 
-  // iOS Low Power Mode refuses even muted inline playback, and a video it blocks
-  // doesn't repaint reliably on seek either, so scrubbing freezes on stale frames.
-  // Probe once with a muted play(): if it's refused, drop the clips for good and let
-  // the stills cross-dissolve with their zoom, the same as under reduced motion.
-  let videoBlocked = false, playProbed = false;
-  function probePlayback(v) {
-    playProbed = true;
-    let p;
-    try { p = v.play(); } catch (e) { return; }
-    if (!p || !p.then) return;
-    p.then(() => { try { v.pause(); } catch (e) {} })
-      .catch(e => {
-        if (debug) dbgLog('probe: ' + e.name);
-        if (e.name === 'NotAllowedError') blockVideo();
-      });
-  }
+  // iOS Low Power Mode refuses even muted inline playback, so the prime play() is
+  // rejected and the clip never gets past metadata. When that happens, drop the clips
+  // for good and let the stills cross-dissolve with their zoom, as under reduced motion.
+  let videoBlocked = false;
   function blockVideo() {
     if (videoBlocked) return;
     videoBlocked = true;
@@ -373,7 +366,13 @@ function mountScrollWorld(container, config) {
       // Never queue a seek while the decoder is still resolving the last one.
       // On phones a fast flick would otherwise pile up seeks and freeze the clip;
       // cur keeps lerping, so we snap to the latest target the moment it's free.
-      if (s.video.seeking) continue;
+      if (s.video.seeking) {
+        // A seek stuck without frame data (iOS suspended the download): kick the
+        // load again with another prime, at most once a second.
+        const now = performance.now();
+        if (s.video.readyState < 2 && now - (s.kickAt || 0) > 1000) { s.kickAt = now; primeVideo(s.video); }
+        continue;
+      }
       if (!s.visible && Math.abs(s.cur - s.target) < 0.002) continue;
       s.cur += (s.target - s.cur) * (reduce ? 1 : SMOOTHING);
       const dur = s.video.duration || 1;
@@ -383,10 +382,9 @@ function mountScrollWorld(container, config) {
     requestAnimationFrame(raf);
   }
 
-  // iOS needs a user gesture before a muted video will decode/paint reliably. On the
-  // first touch we prime every loaded clip (muted play→pause) so the first seek is
-  // instant instead of showing a blank frame. `userReady` also makes freshly-loaded
-  // clips prime themselves (see loadClip).
+  // iOS only buffers frames for a video that has been played. Every clip is primed
+  // (muted play→pause) once its metadata loads, and again on the first touch, since a
+  // play() inside a gesture succeeds where an earlier one may not have.
   let userReady = false;
   function primeVideo(v) {
     if (!isMobile() || !v) return;
