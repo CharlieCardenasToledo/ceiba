@@ -11,7 +11,7 @@ const scenes = [
     id: 'cafetal',
     label: 'Cafetal',
     accent: '#44573A',
-    eyebrow: 'Café de origen · Colombia',
+    eyebrow: 'Café de origen · Ecuador',
     title: 'Café de montaña,\ncosechado a 1.750 metros.',
     body: 'Seguimos cada grano desde la finca hasta tu taza. Baja con calma y recorre el camino.',
   },
@@ -87,13 +87,13 @@ const benefits = [
   },
   {
     icon: 'ph:handshake',
-    title: 'Precio justo en la finca',
-    body: 'Pagamos 38,5 % por encima del precio base de compra a las familias que cultivan.',
+    title: 'Vínculo con productores',
+    body: 'Reconocemos el trabajo de las familias productoras y damos visibilidad al origen de cada lote.',
   },
   {
     icon: 'ph:truck',
     title: 'Llega en 48 horas',
-    body: 'A Bogotá, Medellín, Cali y Barranquilla. Al resto del país en tres a cinco días hábiles.',
+    body: 'A Loja, Quito, Cuenca y Guayaquil. A otros destinos de Ecuador, entre tres y cinco días hábiles.',
   },
 ];
 
@@ -117,7 +117,7 @@ const grinds = ['Grano entero', 'Prensa francesa', 'Filtro', 'Espresso'];
 const reviews = [
   {
     name: 'Valentina Ríos',
-    city: 'Medellín',
+    city: 'Loja',
     initials: 'VR',
     color: 'bg-forest',
     date: '12 de septiembre de 2026',
@@ -125,7 +125,7 @@ const reviews = [
   },
   {
     name: 'Andrés Felipe Cárdenas',
-    city: 'Bogotá',
+    city: 'Quito',
     initials: 'AC',
     color: 'bg-clay',
     date: '27 de agosto de 2026',
@@ -133,7 +133,7 @@ const reviews = [
   },
   {
     name: 'Lucía Mejía Ortiz',
-    city: 'Cali',
+    city: 'Cuenca',
     initials: 'LM',
     color: 'bg-ink-soft',
     date: '3 de octubre de 2026',
@@ -144,7 +144,7 @@ const reviews = [
 const faqs = [
   {
     q: '¿De dónde viene el café?',
-    a: 'De fincas familiares de montaña en Colombia, entre 1.600 y 1.850 metros sobre el nivel del mar. Cada bolsa indica la finca y el lote exacto.',
+    a: 'De fincas familiares de altura en Ecuador. Cada bolsa indica la finca y el lote para que conozcas el origen de tu café.',
   },
   {
     q: '¿Qué molienda debo elegir?',
@@ -152,11 +152,11 @@ const faqs = [
   },
   {
     q: '¿Cuánto tarda el envío?',
-    a: 'Dos días hábiles a Bogotá, Medellín, Cali y Barranquilla. Al resto del país, entre tres y cinco días hábiles.',
+    a: 'Hasta dos días hábiles a Loja, Quito, Cuenca y Guayaquil. A otros destinos de Ecuador, entre tres y cinco días hábiles.',
   },
   {
     q: '¿Cuánto cuesta el envío?',
-    a: 'El envío cuesta $9.900. Es gratis desde dos bolsas o en cualquier suscripción.',
+    a: 'El costo se calcula según el destino. El envío es gratis desde dos bolsas o en cualquier suscripción.',
   },
   {
     q: '¿Cómo funciona la suscripción?',
@@ -187,10 +187,10 @@ const ctaClass =
 ---
 
 <Layout
-  title="CEIBA · Café de origen colombiano, tostado en lotes pequeños"
-  description="Café colombiano de una sola finca, recolectado a mano, secado al sol y tostado cada semana. Recíbelo en 48 horas con la fecha de tueste en la etiqueta."
+  title="CEIBA · Café de origen ecuatoriano, tostado en lotes pequeños"
+  description="Café ecuatoriano de una sola finca, recolectado a mano, secado al sol y tostado cada semana. Recíbelo con la fecha de tueste en la etiqueta."
 >
-  <h1 class="sr-only">CEIBA, café de origen colombiano tostado en lotes pequeños</h1>
+  <h1 class="sr-only">CEIBA, café de origen ecuatoriano tostado en lotes pequeños</h1>
 
   <!-- Scroll-scrubbed camera flight: farm to bag in one continuous take. -->
   <div id="world" aria-label="Recorrido del café, de la finca a la bolsa"></div>
@@ -256,13 +256,13 @@ const ctaClass =
 
         <div class="flex flex-col gap-6" data-reveal>
           <span class="text-xs font-bold uppercase tracking-widest text-clay">La bolsa</span>
-          <h2 id="comprar-titulo" class="text-3xl font-bold tracking-tight md:text-5xl">CEIBA Origen Colombia</h2>
+          <h2 id="comprar-titulo" class="text-3xl font-bold tracking-tight md:text-5xl">CEIBA Origen Ecuador</h2>
           <p class="text-lg text-ink-soft">
             340 g de café de una sola finca. Notas a panela, naranja y cacao, con cuerpo medio y final dulce.
           </p>
           <p class="flex items-baseline gap-2">
-            <span class="text-4xl font-bold">$42.900</span>
-            <span class="text-sm text-ink-soft">COP · envío gratis desde dos bolsas</span>
+            <span class="text-4xl font-bold">$12,00</span>
+            <span class="text-sm text-ink-soft">USD · precio de demostración</span>
           </p>
 
           <form id="order-form" class="flex flex-col gap-6" novalidate>
@@ -467,3 +467,4 @@ const ctaClass =
     });
   </script>
 </Layout>
+

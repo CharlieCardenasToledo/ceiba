@@ -3,7 +3,7 @@
 # CEIBA · Café de origen
 
 **Del árbol a tu mesa en 48 horas.**
-Landing de café de especialidad colombiano contada como un solo recorrido de cámara: bajas con el scroll y viajas del cafetal a la bolsa.
+Landing de café de especialidad ecuatoriano contada como un solo recorrido de cámara: bajas con el scroll y viajas del cafetal a la bolsa.
 
 [**Ver el sitio en vivo →**](https://charliecardenastoledo.github.io/ceiba/)
 
@@ -90,3 +90,4 @@ src/
   lib/url.ts        # withBase() para el base path
 docs/screenshots/   # imágenes de este README
 ```
+
