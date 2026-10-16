@@ -6,8 +6,8 @@ import tailwindcss from '@tailwindcss/vite';
 
 // https://astro.build/config
 export default defineConfig({
-  // GitHub Pages project site: https://jesusgabri3l.github.io/ceiba/
-  site: 'https://jesusgabri3l.github.io',
+  // GitHub Pages project site: https://charliecardenastoledo.github.io/ceiba/
+  site: 'https://charliecardenastoledo.github.io',
   base: '/ceiba',
   integrations: [icon()],
   vite: {
